@@ -18,7 +18,9 @@ class Message extends Misc {
 		}
 		return $this->_users;
 	}
+	
     public function __construct() {
+    	parent::__construct();
         $this->getUsers();
     }
 

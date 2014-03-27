@@ -3,18 +3,8 @@
 require_once("./classes/misc.class.php");
 // We need to use our $db variable (for mysqli) into the class
 
-$GLOBALS = array(
-    'db' => $db
-);
 
 class User extends Misc {
-
-    protected $glob;
-
-    public function __construct() {
-        global $GLOBALS;
-        $this->glob =& $GLOBALS;
-    }
 
     private function checkMailFree($mail)
     {
@@ -144,12 +134,7 @@ class User extends Misc {
         if($userid == 0)
         	return true;
 
-		$result = $this->_db->simpleSelect("users", "username", array("id", "=", $userid));
-        if($row = $result->fetch_assoc()){
-        	return true;
-        }else{
-        	return false;
-        }   
+		return true;
     }
     public function login($user, $pwd)
     {

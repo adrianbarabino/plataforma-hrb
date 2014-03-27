@@ -7,12 +7,12 @@ class Misc {
 	public $_db = null;
  
 	public function setDB(Db $db) {
-		return $that->_db = $db;
+		return $this->_db = $db;
 	}
  
 	public function getDB() {
 		if(null == $this->_db) {
-			$that->setDB(new Db());
+			$this->setDB(new Db());
 
 		}
 		return $this->_db;
