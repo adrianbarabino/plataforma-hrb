@@ -73,11 +73,18 @@ class User extends Misc {
         if($userid == NULL)
             $userid = $this->getCurrentUser();
 
-        if($this->getRank($userid) > 0){
-            return true;
+        if($userid){
+
+            if($this->getRank($userid) > 0){
+                return true;
+            }else{
+        		return false;
+        	}
+
         }else{
-    		return false;
-    	}
+
+            return true;
+        }
     }
 
 

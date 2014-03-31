@@ -24,6 +24,39 @@ class Message extends Misc {
         $this->getUsers();
     }
 
+    public function getAll($lastId = NULL){
+    	if(!$this->_users->isAdmin())
+   		{
+   			$id_user = $this->_users->getCurrentUser();
+   			// if user is not admin, only can see your privates and global messages
+   			// and if is admin, can see all 
+   			$where_array = array(array("M.receiver", "=", $id_user));
+   		}else{
+   			$where_array = NULL;
+   		}
+		$fields_array = array("id", "sender", "receiver", "message", "date");
+        $result = $this->_db->advancedSelect("messages M",$fields_array,$where_array);
+
+	   		$messages_array = array();
+	   	while ($row = $result->fetch_assoc()) {
+
+	   		if($row){
+
+				$msg = array(
+					"id" => $row['id'],
+					"sender"  => $row['sender'],
+					"receiver"  => $row['receiver'],
+					"message"  => $row['message'],
+					"date"  => $row['date']
+					);
+				array_push($messages_array, $msg);
+
+			}
+		}
+				return $messages_array;
+
+
+    }
     public function newMessage($sender, $receiver = NULL, $message, $date = NULL)
 	{
 
@@ -48,6 +81,7 @@ class Message extends Misc {
 				"message" => $message,
 				"date" => $date
 				);
+
 
 			$id_vote = $this->_db->insertToDB("messages", $array_values);
 		}else{
