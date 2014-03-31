@@ -14,10 +14,13 @@ class Db {
 	public function insertToDB($table, $array_values)
 	{
 
-		$fields;
-		$values;
+
+		$fields = "";
+		$values = "";
+
 		foreach ($array_values as $key => $value) {
 			$fields = $fields.$key.", ";
+
 			$values = $values."'".$value."', ";
 		}
 		$fields = substr($fields, 0, -2);
@@ -68,7 +71,7 @@ class Db {
 		}
 	}
 
-	public function advancedSelect($table, $fields_array, $where_array, $join_array = NULL, $limit = NULL)
+	public function advancedSelect($table, $fields_array, $where_array = NULL, $join_array = NULL, $limit = NULL)
 	{
 		// Example of advencedSelect:
 
@@ -92,7 +95,7 @@ class Db {
 
 		// Looking inside Fields Array:
 
-		$fields;
+		$fields = "";
 
 		foreach ($fields_array as $key) {
 			$fields = $fields."".$key.", ";
@@ -100,44 +103,52 @@ class Db {
 		$fields = substr($fields, 0, -2);
 
 		// Looking inside Where Array
+		$whereString = "";	
+		if($where_array != NULL)
+		{
+			// If the where array is not null, we look inside...
 
-		if(count($where_array) > 1){
+			if(count($where_array) > 1){
 
-			$whereString;
 
-			foreach ($where_array as $key) {
-				$whereString .= sprintf("%s %s '%s' AND", $key[0], $key[1], $key[2]);
+
+				foreach ($where_array as $key) {
+					$whereString .= sprintf("%s %s '%s' AND", $key[0], $key[1], $key[2]);
+				}
+				$whereString .= substr($whereString, 0, -3);
+
+			}else{
+				$key = $where_array[0];
+				$whereString .= sprintf("%s %s '%s' ", $key[0], $key[1], $key[2]);
 			}
-			$whereString .= substr($whereString, 0, -3);
-
-		}else{
-			$key = $where_array[0];
-			$whereString .= sprintf("%s %s '%s' ", $key[0], $key[1], $key[2]);
 		}
-
 		// Looking inside Join Array
 		// Example of Join Array = array( array("INNER", "author", "book.id_author", "=", "author.id") );
 
 
-			$joinString;
+			$joinString = "";
+			if($join_array != NULL)
+			{
+				$i = 0;
+				foreach ($join_array as $key) {
+					if($i = 0){
 
-			$i = 0;
-			foreach ($join_array as $key) {
-				if($i = 0){
+						$joinString .= sprintf("%s JOIN %s ON %s %s %s ", $key[0], $key[1], $key[2], $key[3], $key[4]);
+					}else{
 
-					$joinString .= sprintf("%s JOIN %s ON %s %s %s ", $key[0], $key[1], $key[2], $key[3], $key[4]);
-				}else{
-
-					$joinString .= sprintf("%s JOIN %s ON %s %s %s ", $key[0], $key[1], $key[2], $key[3], $key[4]);
+						$joinString .= sprintf("%s JOIN %s ON %s %s %s ", $key[0], $key[1], $key[2], $key[3], $key[4]);
+					}
+					$i++;
 				}
-				$i++;
 			}
 
 			
 
 
-
-		$sql = sprintf("SELECT %s FROM %s %s WHERE %s", $fields, $table, $joinString, $whereString);
+		if($whereString){
+			$whereString = "WHERE ".$whereString;
+		}
+		$sql = sprintf("SELECT %s FROM %s %s %s", $fields, $table, $joinString, $whereString);
 		if($result = $this->raw->query($sql)){
 			return $result;
 
