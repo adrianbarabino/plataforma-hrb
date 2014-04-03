@@ -10,7 +10,7 @@ $message = new Message;
 =======
 $message2 = $message->newMessage(1, 1, "hola");
 
-
+s
 require("./classes/user.class.php");
 
 // Testing create new user
