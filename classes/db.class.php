@@ -19,14 +19,13 @@ class Db {
 		$values = "";
 
 		foreach ($array_values as $key => $value) {
-			$fields = $fields.$key.", ";
+			$fields = $fields."`".$key."`, ";
 
 			$values = $values."'".$value."', ";
 		}
 		$fields = substr($fields, 0, -2);
 		$values = substr($values, 0, -2);
-		$sql = sprintf("INSERT INTO %s (%s) VALUES (%s)", $table, $fields, $values);
-
+		$sql = sprintf("INSERT INTO `%s` (%s) VALUES (%s)", $table, $fields, $values);
 		if($result = $this->raw->query($sql)){
 			return $this->raw->insert_id;
 		}else{
@@ -60,9 +59,9 @@ class Db {
 		// Where array example: array (table, fields, where array);
 
 		$sql = sprintf("SELECT %s FROM %s WHERE `%s` %s '%s'", $fields, $table, $where_array[0], $where_array[1], $where_array[2]);
-		
 		if($result = $this->raw->query($sql)){
 			return $result;
+
 
 		}else{
 			die("ERROR in the query: ".$this->raw->error);
@@ -71,7 +70,7 @@ class Db {
 		}
 	}
 
-	public function advancedSelect($table, $fields_array, $where_array = NULL, $join_array = NULL, $limit = NULL)
+	public function advancedSelect($table, $fields_array, $where_array = NULL, $join_array = NULL, $limit = NULL, $order = NULL)
 	{
 		// Example of advencedSelect:
 
@@ -148,7 +147,14 @@ class Db {
 		if($whereString){
 			$whereString = "WHERE ".$whereString;
 		}
-		$sql = sprintf("SELECT %s FROM %s %s %s", $fields, $table, $joinString, $whereString);
+		if(!$limit == NULL){
+			$limit = " LIMIT ".$limit;
+		}
+		if(!$order == NULL){
+			$order = " ORDER BY ".$order;
+		}
+
+		$sql = sprintf("SELECT %s FROM %s %s %s %s %s", $fields, $table, $joinString, $whereString, $order, $limit);
 		if($result = $this->raw->query($sql)){
 			return $result;
 
@@ -174,10 +180,11 @@ class Db {
 	
 	public function haveRows($result)
 	{
-        if($result->num_rows > 0){
-        	return true;
+
+        if($result->num_rows == 0){
+        	return false;
 		}else{
-			return false;
+			return true;
 		}
 	}
 	public function numRows($result)

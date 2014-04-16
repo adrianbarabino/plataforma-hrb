@@ -25,17 +25,26 @@ class Message extends Misc {
     }
 
     public function getAll($lastId = NULL){
+    	$where_array = array();
     	if(!$this->_users->isAdmin())
    		{
    			$id_user = $this->_users->getCurrentUser();
    			// if user is not admin, only can see your privates and global messages
    			// and if is admin, can see all 
-   			$where_array = array(array("M.receiver", "=", $id_user));
-   		}else{
+   			$is_admin_array = array("M.receiver", "=", $id_user);
+   			array_push($where_array, $is_admin_array);
+   		}
+   		if(!$lastId == NULL){
+   			$lastid_array = array("M.id", ">", $lastId);
+   			array_push($where_array, $lastid_array);
+   		}
+
+   		if(count($where_array) == 0){
    			$where_array = NULL;
    		}
+   		
 		$fields_array = array("id", "sender", "receiver", "message", "date");
-        $result = $this->_db->advancedSelect("messages M",$fields_array,$where_array);
+        $result = $this->_db->advancedSelect("messages M",$fields_array,$where_array, NULL, NULL, "id ASC");
 
 	   		$messages_array = array();
 	   	while ($row = $result->fetch_assoc()) {
@@ -57,13 +66,18 @@ class Message extends Misc {
 
 
     }
-    public function newMessage($sender, $receiver = NULL, $message, $date = NULL)
+    public function newMessage($sender = NULL, $receiver = NULL, $message, $date = NULL)
 	{
 
 		$users = $this->_users;
 		// receiver null? so this message is global!
 		if($receiver == NULL)
 			$receiver = 0;
+
+
+		// sender null? so this message is from current!
+		if($receiver == NULL)
+			$receiver = $users->getCurrentUser();
 
 
 		// date null? so this message is sented right now!

@@ -3,20 +3,30 @@
 require_once("./classes/misc.class.php");
 // We need to use our $db variable (for mysqli) into the class
 
+class User extends Misc 
+{
 
-class User extends Misc {
 
+    public function validateMail($mail)
+    {
+        if (filter_var($mail, FILTER_VALIDATE_EMAIL)) {
+            return true;
+        }else{
+            return false;
+        }
+
+    }
     private function checkMailFree($mail)
     {
         $result = $this->_db->simpleSelect("users", "email", array("email", "=", $mail));
         
-        return $this->haveRows($result);
+        return ($this->_db->haveRows($result) == true) ? false : true;  
     }
 
     private function checkPwd($user, $pwd)
     {
-        $result = $this->_db->simpleSelect("users", "username, password", array("username = '".$user."' AND password", "=", $this->hashPwd($pwd)));
-        return $this->haveRows($result);
+        $result = $this->_db->simpleSelect("users", "`username`, `password`", array("username` = '".$user."' AND `password", "=", $this->hashPwd($pwd)));
+        return $this->_db->haveRows($result);
     }
 
     private function checkUsername($user)
@@ -24,7 +34,7 @@ class User extends Misc {
 
         $result = $this->_db->simpleSelect("users", "username", array("username", "=", $user));
 
-        return $this->haveRows($result);
+        return ($this->_db->haveRows($result) == true) ? false : true; 
     }
 
 
@@ -39,8 +49,8 @@ class User extends Misc {
     {
         if(isset($_COOKIE['userLogged'])){
             $user_array = json_decode(urldecode($_COOKIE['userLogged']));
-            if(isset($user_array['id'])){
-                return $user_array['id'];
+            if(isset($user_array->id)){
+                return $user_array->id;
             }
         }else{
                 return false;
@@ -51,7 +61,7 @@ class User extends Misc {
 
         $sql = sprintf("SELECT U.* FROM users U
         WHERE U.id = '%s' ", $userid);
-        $result = $this->glob['db']->query($sql); 
+        $result = $this->_db->raw->query($sql); 
         if($row = $result->fetch_assoc()){
         $userData = array(
             "id" => $row['id'],
@@ -64,7 +74,7 @@ class User extends Misc {
             );
             return $userData;
         }else{
-            return $this->glob['db']->error;
+            return $this->_db->raw->error;
         }
     }
     
@@ -110,6 +120,7 @@ class User extends Misc {
     private function getUserId($username)
     {
         $result = $this->_db->simpleSelect("users", "id", array("username", "=", $username));
+
         if($row = $result->fetch_assoc()){
             return $row['id'];
         }else{
@@ -117,11 +128,11 @@ class User extends Misc {
         }
     }
 
-    private function isLogged()
+    public function isLogged()
     {
         if(isset($_COOKIE['userLogged'])){
             $user_array = json_decode(urldecode($_COOKIE['userLogged']));
-            if(isset($user_array['username'])){
+            if(isset($user_array->username)){
                 return true;
             }
         }else{
@@ -139,6 +150,19 @@ class User extends Misc {
 
         return true;
     }
+    public function remove($id_user)
+    {
+
+        $where_array = array("id", "=", $id_user);
+        if($this->_db->deleteToDB("users", $where_array)){
+            // User deleted sucefully ! 
+            return true;
+        }else{
+            // Error
+            die("Error deleting the user!");
+        }
+
+    }
     public function login($user, $pwd)
     {
         if(!$this->isLogged()){
@@ -148,14 +172,15 @@ class User extends Misc {
                 $login_array = array(
                     "id" => $this->getUserId($user),
                     "username" => $user,
-                    "fullname" => $this->getFullname($user),
+                    "fullname" => $this->getFullname($this->getUserId($user)),
                     "pwd" => $this->hashPwd($pwd),
                     "rank" => $this->getRank($this->getUserId($user)) 
                 );
 
                 $login_array = urlencode(json_encode($login_array));
-                setcookie("userLogged", $login_array, time()+72000);
-                print_r(json_decode(urldecode($login_array)));
+                $domain = ($_SERVER['HTTP_HOST'] != 'localhost') ? $_SERVER['HTTP_HOST'] : false;
+                setcookie("userLogged", $login_array, time()+72000, '/', $domain, false);
+                return $login_array;
                 
             }else{
                 die("Wrong user/password combination !");
@@ -165,11 +190,17 @@ class User extends Misc {
         }
     }
 
-    public function editUser($id, $username, $pwd, $email, $rank)
+    public function editUser($id, $username, $pwd, $fullname, $email, $rank)
     {
         # code...
     }
-    public function register($username, $pwd, $email, $rank = 0)
+    public function logout($id = NULL)
+    {
+                $domain = ($_SERVER['HTTP_HOST'] != 'localhost') ? $_SERVER['HTTP_HOST'] : false;
+                setcookie("userLogged", "x", time()-3600, '/', $domain, false);
+    }
+
+    public function register($username, $pwd, $email, $fullname, $rank = 0)
     {
         if($this->checkMailFree($email))
         {
@@ -179,12 +210,13 @@ class User extends Misc {
                     $array_values = array(
                         "username" => $username,
                         "email" => $email,
+                        "fullname" => $fullname,
                         "rank" => $rank,
                         "password" => $this->hashPwd($pwd),
                         "last_ip" => $_SERVER['REMOTE_ADDR'],
                     );
-                    if($id_vote = $this->insertToDB("users", $array_values)){
-                        return true;
+                    if($id_reg = $this->_db->insertToDB("users", $array_values)){
+                        return $id_reg;
                     }else{
                         return false;
                         die("Error!");
@@ -200,11 +232,5 @@ class User extends Misc {
         }else{
             die("Email already used!");
         }
-        # code...
-    }
-
-    public function logout()
-    {
-        setcookie("userLogged", "", time()-3600);
     }
 }
